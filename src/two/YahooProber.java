@@ -1,3 +1,5 @@
+package two;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -8,17 +10,22 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-class QueryResult {
-	int numHits;
-	JSONArray topResults;
+
+class DocumentSample {
+	String category;
+	Set<String> filteredDocs = new HashSet<String>();
 }
 
 /**
@@ -41,7 +48,8 @@ public class YahooProber {
 	// Category tree
 	private HashMap<String, String> catNodes = new HashMap<String, String>();
 	// Cached results for queries
-	private HashMap<String, QueryResult> cachedResults = new HashMap<String, QueryResult>();
+	private HashMap<String, Set<String>> cachedResults = new HashMap<String, Set<String>>();
+
 	// Result for categories
 	private HashMap<String, Double> catSpecificity = new HashMap<String, Double>();
 	private HashMap<String, Integer> catCoverage = new HashMap<String, Integer>();
@@ -94,15 +102,17 @@ public class YahooProber {
 
 	public LinkedList<String> classifyDB() {
 
-		HashSet<String> pCategories = new HashSet<String>();
 		HashSet<String> categories = new HashSet<String>();
 		categories.add("queries/Root.txt");
 		int level = 1;
 		do {
+			// for storing child categories while iterating
 			HashSet<String> tempCats = new HashSet<String>();
 			for (String cat : categories) {
 				String catName = cat.split("queries\\/|.txt")[1];
 				System.err.println(cat);
+				Set<String> docs = new HashSet<String>();
+				cachedResults.put(catName, docs);
 				int coverage = 0;
 				try {
 					FileInputStream fstream = new FileInputStream(cat);
@@ -111,22 +121,23 @@ public class YahooProber {
 							new InputStreamReader(in));
 					String query;
 					int cCoverage = 0;
-					String pCat = null;
+					String previousCategory = null;
 					while ((query = br.readLine()) != null) {
-						String queryTerms[] = query.split(" ");
-						if ((pCat != null) && (!queryTerms[0].equals(pCat))) {
-							this.catCoverage.put(pCat, cCoverage);
+						String[] queryTerms = query.split(" ");
+						if ((previousCategory != null)
+								&& (!queryTerms[0].equals(previousCategory))) {
+							this.catCoverage.put(previousCategory, cCoverage);
 							cCoverage = 0;
 						}
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
-						int numhits = this.poseQuery(queryTerms);
-						//Try to avoid abusing the site
+						int numhits = this.poseQuery(queryTerms, docs);
+						// Try to avoid abusing the site
 						Thread.sleep(5000);
 						coverage += numhits;
 						cCoverage += numhits;
-						pCat = queryTerms[0];
+						previousCategory = queryTerms[0];
 					}
-					this.catCoverage.put(pCat, cCoverage);
+					this.catCoverage.put(previousCategory, cCoverage);
 					in.close();
 					this.overallCoverage.put(catName, coverage);
 					if (this.getParent(catName) != null) {
@@ -157,6 +168,8 @@ public class YahooProber {
 					toRemove.add(catName);
 				}
 			}
+
+			// remove all categories which are < Ts or Tc
 			for (String tr : toRemove) {
 				String c = tr.split("queries\\/|.txt")[1];
 				categories.remove(tr);
@@ -171,15 +184,52 @@ public class YahooProber {
 					/ this.getOverallCoverage(this.getParent(c));
 			this.catSpecificity.put(c, specificity);
 		}
+
+		/* classified categories */
 		for (String fc : this.catSpecificity.keySet()) {
 			System.err.println("sc " + fc + " " + this.catSpecificity.get(fc)
 					+ " " + this.catCoverage.get(fc));
 		}
 
+		
+		/* document sampling after category selection */
+		List<DocumentSample> docSample = new ArrayList<DocumentSample>();
+		DocumentSample dc;
+		List<String> childList = new ArrayList<String>();
+		for (String fc : this.catSpecificity.keySet()) {
+			
+			dc = new DocumentSample();
+			dc.category = fc;
+			dc.filteredDocs = cachedResults.get(fc);
+			docSample.add(dc);
+			
+			String tempCat = fc;
+			String parent = null;
+			while((parent = this.getParent(tempCat)) != null){
+				childList.add(tempCat);
+				dc = new DocumentSample();
+				dc.category = parent;
+				dc.filteredDocs = cachedResults.get(parent);
+				// add all the child documents
+				for(String c: childList){
+					dc.filteredDocs.addAll(cachedResults.get(c));
+				}
+				tempCat = parent;
+			}
+		}
+		
+		// fetch all the webpages for each doc sample
+
 		return null;
 	}
 
-	public int poseQuery(String queryTerms[]) { 
+	/**
+	 * 
+	 * @param queryTerms
+	 * @param categoryName
+	 * @return
+	 */
+	public int poseQuery(String[] queryTerms, Set<String> docs) {
 
 		String query = new String();
 		JSONArray ja = new JSONArray();
@@ -188,6 +238,7 @@ public class YahooProber {
 			for (int i = 1; i < queryTerms.length; i++)
 				query += " " + queryTerms[i];
 			query = URLEncoder.encode(query, "UTF-8");
+			System.out.println("Probing Query: " + query);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -196,7 +247,7 @@ public class YahooProber {
 		try {
 			url = new URL("http://boss.yahooapis.com/ysearch/web/v1/" + query
 					+ "?appid=" + API_KEY + "&sites=" + this.url + "&start=0"
-					+ "&count=" + this.topResults + "&format=json");
+					+ "&count=" + YahooProber.topResults + "&format=json");
 			URLConnection connection = url.openConnection();
 
 			String line;
@@ -213,22 +264,24 @@ public class YahooProber {
 			int numHits = Integer.parseInt(strHits);
 			if (numHits == 0)
 				return 0;
+
 			ja = json.getJSONObject("ysearchresponse").getJSONArray(
 					"resultset_web");
-
 			// this.cachedResults.put(, value)
-			/*
-			 * System.out.println("\nQuerying for " + query); for (int i = 0; i
-			 * < this.topResults; i++) { if (ja.length() == i) { break; }
-			 * System.out.print((i + 1) + ". "); j = ja.getJSONObject(i);
-			 * System.out.println(j.getString("title"));
-			 * System.out.println(j.getString("url"));
-			 * System.out.println(j.getString("abstract"));
-			 * System.out.println("Yahoo URL = " + url.toString()); }
-			 * 
-			 * System.err.println("Number of matches for query " + query + " ="
-			 * + numHits);
-			 */
+
+			System.out.println("\nQuerying for " + query);
+			for (int i = 0; i < YahooProber.topResults; i++) {
+				if (ja.length() == i) {
+					break;
+				}
+				System.out.print((i + 1) + ". ");
+				j = ja.getJSONObject(i);
+				System.out.println(j.getString("url"));
+				docs.add(j.getString("url"));
+
+			}
+			System.err.println("Number of matches for query " + query + " ="
+					+ numHits);
 
 			return numHits;
 		} catch (MalformedURLException e) {

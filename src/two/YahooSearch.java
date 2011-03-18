@@ -1,3 +1,5 @@
+package two;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,28 +14,35 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Part of this code is from out first project
+ * Part of this code is from our first project
  */
 public class YahooSearch {
 
 	private final String API_KEY = "BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO";
-    private String url="diabetes.org";
-    private float specificity=0.6f;
-    private int coverage=100;
-	
+	// default database to classify
+	private String url = "diabetes.org";
+	private float specificity = 0.6f;
+	private int coverage = 100;
+
 	public YahooSearch() {
 	}
-	
-	public YahooSearch(String url,float specificity, int coverage) {
-		this.url="http://"+url;
-		this.specificity=specificity;
-		this.coverage=coverage;
+
+	/**
+	 * 
+	 * @param url
+	 * @param specificity
+	 * @param coverage
+	 */
+	public YahooSearch(String url, float specificity, int coverage) {
+		this.url = "http://" + url;
+		this.specificity = specificity;
+		this.coverage = coverage;
 	}
-	
+
 	public void makeQuery(String query) {
 		System.out.println("\nQuerying for " + query);
 		JSONArray ja = new JSONArray();
-		// Convert spaces to + to make a valid URL
+		// Convert spaces to '+', to make a valid URL
 		try {
 			query = URLEncoder.encode(query, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -44,7 +53,7 @@ public class YahooSearch {
 		try {
 			url = new URL("http://boss.yahooapis.com/ysearch/web/v1/" + query
 					+ "?appid=" + API_KEY + "&start=0"
-					+ "&count=50&format=json");
+					+ "&count=10&format=json");
 			URLConnection connection = url.openConnection();
 			String line;
 			StringBuilder builder = new StringBuilder();
@@ -77,11 +86,11 @@ public class YahooSearch {
 	public static void main(String args[]) {
 		if (args.length >= 3) {
 			System.out.println("Using command line arguments...");
-			float p = Float.parseFloat(args[1]);
-			int c = Integer.parseInt(args[2]);
-			new YahooSearch(args[0], p, c);
+			float specificity = Float.parseFloat(args[1]);
+			int coverage = Integer.parseInt(args[2]);
+			new YahooSearch(args[0], specificity, coverage);
 		} else {
-			System.out.println("No arguments provided..Using default database!");
+			System.out.println("No arguments..default database!");
 			new YahooSearch();
 		}
 	}
