@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -17,15 +18,36 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 class DocumentSample {
 	String category;
-	Set<String> filteredDocs = new HashSet<String>();
+	Set<String> filteredURLs = new HashSet<String>();
+	Map<Integer, String> docIdMap = new HashMap<Integer, String>();
+	Map<Integer, String> wordIdMap = new HashMap<Integer, String>();
+	// Stores the global word set of all the included documents
+	Set<String> wordSet = new TreeSet<String>();
+	Map<String, Document> docMap = new HashMap<String, Document>();
+}
+
+/**
+ * maintained for each URL / document
+ * 
+ * @author aman
+ * 
+ */
+class Document {
+	String url;
+	Map<String, Integer> wordFreqMap = new HashMap<String, Integer>();
+
+	public Document(String url) {
+		this.url = url;
+	}
 }
 
 /**
@@ -191,34 +213,8 @@ public class YahooProber {
 					+ " " + this.catCoverage.get(fc));
 		}
 
-		
-		/* document sampling after category selection */
-		List<DocumentSample> docSample = new ArrayList<DocumentSample>();
-		DocumentSample dc;
-		List<String> childList = new ArrayList<String>();
-		for (String fc : this.catSpecificity.keySet()) {
-			
-			dc = new DocumentSample();
-			dc.category = fc;
-			dc.filteredDocs = cachedResults.get(fc);
-			docSample.add(dc);
-			
-			String tempCat = fc;
-			String parent = null;
-			while((parent = this.getParent(tempCat)) != null){
-				childList.add(tempCat);
-				dc = new DocumentSample();
-				dc.category = parent;
-				dc.filteredDocs = cachedResults.get(parent);
-				// add all the child documents
-				for(String c: childList){
-					dc.filteredDocs.addAll(cachedResults.get(c));
-				}
-				tempCat = parent;
-			}
-		}
-		
-		// fetch all the webpages for each doc sample
+		// build content summary
+		this.buildContentSummary();
 
 		return null;
 	}
@@ -297,8 +293,115 @@ public class YahooProber {
 
 	public void buildContentSummary() {
 
+		/* document sampling after category selection */
+		List<DocumentSample> docSample = new ArrayList<DocumentSample>();
+		DocumentSample dc;
+		List<String> childList = new ArrayList<String>();
+		for (String fc : this.catSpecificity.keySet()) {
+
+			dc = new DocumentSample();
+			// category for this document sample
+			dc.category = fc;
+			// all the documents related to this category
+			dc.filteredURLs = cachedResults.get(fc);
+			docSample.add(dc);
+
+			String tempCat = fc;
+			String parent = null;
+			while ((parent = this.getParent(tempCat)) != null) {
+				childList.add(tempCat);
+				dc = new DocumentSample();
+				dc.category = parent;
+				dc.filteredURLs = cachedResults.get(parent);
+				// add all the child documents
+				for (String c : childList) {
+					dc.filteredURLs.addAll(cachedResults.get(c));
+				}
+				tempCat = parent;
+			}
+		}
+
+		// fetch all the webpages for each doc sample
+		for (DocumentSample ds : docSample) {
+			int docId = 0;
+			for (String url : ds.filteredURLs) {
+				Set<String> words = URLProcessor.runLynx(url);
+				// calculate the word frequency in this document
+				Document d = new Document(url);
+				d = this.wordFrequency(words, d);
+				ds.docMap.put(url, d);
+				// create a documentId map and put it in global wordSet
+				ds.wordSet.addAll(d.wordFreqMap.keySet());
+				ds.docIdMap.put(docId, url);
+				docId++;
+			}
+
+			// setting the wordIdMap, words are already in sorted order
+			int wordId = 0;
+			Map<Integer, String> wordIdMap = ds.wordIdMap;
+			for (String word : ds.wordSet) {
+				wordIdMap.put(wordId, word);
+				wordId++;
+			}
+
+			// raw frequency matrix
+			int numDocs = ds.docIdMap.size();
+			int numWords = ds.wordSet.size();
+			Document doc;
+			double[][] data = new double[numWords][numDocs];
+			for (int i = 0; i < numWords; i++) {
+				for (int j = 0; j < numDocs; j++) {
+					String docName = ds.docIdMap.get(j);
+					doc = ds.docMap.get(docName);
+					String word = ds.wordIdMap.get(i);
+					int count = doc.wordFreqMap.get(word);
+					data[i][j] = count;
+				}
+			}
+
+			// display result
+			this.display(ds.docIdMap, ds.wordIdMap, data);
+		}
 	}
 
+	/*
+	 * Display the word-document matrix
+	 */
+	public void display(Map<Integer, String> docIdMap,
+			Map<Integer, String> wordIdMap, double[][] data) {
+		PrintStream writer = new PrintStream(System.out, true);
+		writer.printf("%15s", " ");
+		for (Integer d : docIdMap.keySet()) {
+			writer.printf("%8s", "D" + d);
+		}
+		writer.println();
+		int numDocs = docIdMap.size();
+		int numWords = wordIdMap.size();
+		for (int i = 0; i < numWords; i++) {
+			writer.printf("%20s", wordIdMap.get(i));
+			for (int j = 0; j < numDocs; j++) {
+				writer.printf("%8.4f", data[i][j]);
+			}
+			writer.println();
+		}
+		writer.flush();
+	}
+
+	private Document wordFrequency(Set<String> words, Document d) {
+		Map<String, Integer> terms = d.wordFreqMap;
+		// Increase the term frequency
+		for (String s : words) {
+			if (terms.containsKey(s.toLowerCase())) {
+				int freq = terms.get(s.toLowerCase());
+				terms.put(s.toLowerCase(), ++freq);
+			} else {
+				terms.put(s.toLowerCase(), 1);
+			}
+		}
+		return d;
+	}
+
+	
 	public static void main(String args[]) {
 		if (args.length >= 3) {
 			System.out.println("Using command line arguments...");
