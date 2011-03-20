@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.json.JSONArray;
@@ -40,9 +39,6 @@ class DocumentSample {
 
 /**
  * maintained for each URL / document
- * 
- * @author aman
- * 
  */
 class Document {
 	String url;
@@ -65,7 +61,7 @@ public class YahooProber {
 	// Default url
 	private String databaseURL = "hardwarecentral.com";
 	// Default specificity
-	private double SPECIFICITY = 0.6f;
+	private double SPECIFICITY = 0.6;
 	// Default coverage
 	private int COVERAGE = 100;
 	// Number of top results to use for content-summary
@@ -139,6 +135,9 @@ public class YahooProber {
 		this.classifyDB();
 	}
 
+	/*
+	 * Initialize category tree
+	 */
 	public void initalizeTree() {
 		this.catNodes.put("Sports", "Root");
 		this.catNodes.put("Health", "Root");
@@ -156,12 +155,10 @@ public class YahooProber {
 	}
 
 	public int getOverallCoverage(String catNode) {
-
 		return this.overallCoverage.get(catNode);
 	}
 
 	public int getCoverage(String catNode) {
-
 		return this.catCoverage.get(catNode);
 	}
 
@@ -417,7 +414,7 @@ public class YahooProber {
 	public static void main(String args[]) {
 		if (args.length >= 3) {
 			System.out.println("Using command line arguments...");
-			float p = Float.parseFloat(args[1]);
+			double p = Double.parseDouble(args[1]);
 			int c = Integer.parseInt(args[2]);
 			new YahooProber(args[0], p, c);
 		} else {
