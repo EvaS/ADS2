@@ -28,8 +28,6 @@ import org.json.JSONObject;
 class DocumentSample {
 	String category;
 	Set<String> filteredURLs = new HashSet<String>();
-	Map<Integer, String> urlIdMap = new HashMap<Integer, String>();
-	Map<Integer, String> wordIdMap = new HashMap<Integer, String>();
 	// Stores the global word set of all the included documents
 	Set<String> wordSet = new TreeSet<String>();
 	Map<String, Document> urlMap = new HashMap<String, Document>();
