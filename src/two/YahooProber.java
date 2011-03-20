@@ -207,6 +207,8 @@ public class YahooProber {
 			}
 			System.out.println("\n");
 			// Remove all categories which are < Ts or Tc
+
+			// remove all categories for which specificity < Ts or Coverage < Tc
 			for (String tr : toRemove) {
 				String c = tr.split("queries\\/|.txt")[1];
 				categories.remove(tr);
