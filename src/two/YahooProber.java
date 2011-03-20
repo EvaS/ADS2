@@ -1,8 +1,10 @@
 package two;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -12,6 +14,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -28,11 +31,11 @@ import org.json.JSONObject;
 class DocumentSample {
 	String category;
 	Set<String> filteredURLs = new HashSet<String>();
-	Map<Integer, String> docIdMap = new HashMap<Integer, String>();
+	Map<Integer, String> urlIdMap = new HashMap<Integer, String>();
 	Map<Integer, String> wordIdMap = new HashMap<Integer, String>();
 	// Stores the global word set of all the included documents
 	Set<String> wordSet = new TreeSet<String>();
-	Map<String, Document> docMap = new HashMap<String, Document>();
+	Map<String, Document> urlMap = new HashMap<String, Document>();
 }
 
 /**
@@ -43,7 +46,7 @@ class DocumentSample {
  */
 class Document {
 	String url;
-	Map<String, Integer> wordFreqMap = new HashMap<String, Integer>();
+	Set<String> words = new HashSet<String>();
 
 	public Document(String url) {
 		this.url = url;
@@ -60,7 +63,7 @@ public class YahooProber {
 	// Number of hierarchy levels
 	private static int levels = 2;
 	// Default url
-	private String url = "hardwarecentral.com";
+	private String databaseURL = "hardwarecentral.com";
 	// Default specificity
 	private double SPECIFICITY = 0.6f;
 	// Default coverage
@@ -77,6 +80,46 @@ public class YahooProber {
 	private HashMap<String, Integer> catCoverage = new HashMap<String, Integer>();
 	private HashMap<String, Integer> overallCoverage = new HashMap<String, Integer>();
 
+	// List of stopwords:
+	// http://www.textfixer.com/resources/common-english-words.txt
+	private static final String STOP_WORDS = "a aa aaa about above across after again against all almost alone along "
+			+ "already also although always among an and another any anybody anyone "
+			+ "anything anywhere are area areas as ask asked asking asks at "
+			+ "away b back backed backing backs be became because become becomes "
+			+ "been before began behind being beings best better between big both but "
+			+ "by c came can cannot case cases certain certainly clear clearly com come "
+			+ "could d did differ different differently do does done down downed "
+			+ "downing downs during e each early either end ended ending ends enough "
+			+ "even evenly ever every everybody everyone everything everywhere f "
+			+ "fact facts far felt few find finds for from full fully further furthered "
+			+ "furthering furthers g gave general generally get gets give given gives go going "
+			+ "goof goods got great greater greatest group grouped grouping groups h had has have "
+			+ "having he her here herself high higher highest him himself his how however i if "
+			+ "important in interest interested interesting interests into is it its itself "
+			+ "j just k keep keeps kind kind knew know known l large largely last later latest least "
+			+ "less let lets like likely long longer longest m made make making man many may me member "
+			+ "members men might more most mostly mr mrs much must my myself n necessary need needed needing "
+			+ "needs never new newer newest next no nobody non noone not nothing now nowhere number numbers "
+			+ "o of off often on once one only open opened opening opens or order ordered "
+			+ "ordering orders other others our out over p part parted parting parts per pre perhaps place places "
+			+ "point pointed pointing points present presented presenting presents problem problems put "
+			+ "puts q quite r rather really right room rooms s said same saw say says second see "
+			+ "seem seemed seemingseems sees several shall she should show showed showing shows side sides "
+			+ "since small smaller smallest so some somebody someone something somewhere state states "
+			+ "still such sure t take taken than that the their them then there therefore these they "
+			+ "thing things think thinks this those though thought thoughts three through thus to today "
+			+ "together too took toward turn turned turning turns two u under until up upon "
+			+ "us use used uses v very w want wanting wants was way ways we well wells went were "
+			+ "what when where whether which while who whole whose why will within without "
+			+ "work worked working works would x y year years yet young you younger youngest your yours z"
+			+ "online welcome with specific site";
+
+	private static Set<String> stopWords;
+	static {
+		stopWords = new HashSet<String>();
+		stopWords.addAll(Arrays.asList(STOP_WORDS.split(" ")));
+	}
+
 	/*
 	 * Default constructor
 	 */
@@ -89,7 +132,7 @@ public class YahooProber {
 	 * Constructor with arguments
 	 */
 	public YahooProber(String url, double specificity, int coverage) {
-		this.url = url;
+		this.databaseURL = url;
 		this.SPECIFICITY = specificity;
 		this.COVERAGE = coverage;
 		this.initalizeTree();
@@ -127,6 +170,7 @@ public class YahooProber {
 		HashSet<String> categories = new HashSet<String>();
 		categories.add("queries/Root.txt");
 		int level = 1;
+		System.out.println("Classifying ... \n\n");
 		do {
 			// for storing child categories while iterating
 			HashSet<String> tempCats = new HashSet<String>();
@@ -154,7 +198,7 @@ public class YahooProber {
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
 						int numhits = this.poseQuery(queryTerms, docs);
 						// Try to avoid abusing the site
-						Thread.sleep(5000);
+						// Thread.sleep(5000);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
@@ -215,8 +259,90 @@ public class YahooProber {
 
 		// build content summary
 		this.buildContentSummary();
-
 		return null;
+	}
+
+	public void buildContentSummary() {
+
+		/* document sampling after category selection */
+		List<DocumentSample> docSample = new ArrayList<DocumentSample>();
+		DocumentSample dc;
+		List<String> childList = new ArrayList<String>();
+		// classified category will always be some leaf
+		for (String fc : this.catSpecificity.keySet()) {
+			dc = new DocumentSample();
+			// category for this document sample
+			dc.category = fc;
+			// all the documents related to this category
+			dc.filteredURLs = cachedResults.get(fc);
+			docSample.add(dc);
+			String tempCat = fc;
+			String parent = null;
+			while ((parent = this.getParent(tempCat)) != null) {
+				childList.add(tempCat);
+				dc = new DocumentSample();
+				dc.category = parent;
+				dc.filteredURLs = cachedResults.get(parent);
+				// add all the child documents
+				for (String c : childList) {
+					dc.filteredURLs.addAll(cachedResults.get(c));
+				}
+				// add to the document class list
+				docSample.add(dc);
+				tempCat = parent;
+			}
+			// prepare for the next sample
+			childList.clear();
+		}
+
+		// fetch all the webpages for each doc sample
+		for (DocumentSample ds : docSample) {
+			int docId = 0;
+			System.out.println("Building document sample for " + ds.category);
+			for (String url : ds.filteredURLs) {
+				System.out.printf("[%d] Getting page: %s \n",(docId+1),url);
+				Set<String> words = URLProcessor.runLynx(url);
+				Document d = new Document(url);
+				d.words = words;
+				ds.urlMap.put(url, d);
+				ds.wordSet.addAll(words);
+				docId++;
+			}
+
+			String fileName = "sample-"+ds.category+"-"+this.databaseURL+".txt";
+			// display result
+			this.display(ds, fileName);
+		}
+		System.out.println("Finished generating document samples..");
+	}
+
+	/*
+	 * Display the word-document matrix
+	 */
+	public void display(DocumentSample ds, String fileName) {
+		FileWriter fstream;
+		BufferedWriter out;
+		try {
+			fstream = new FileWriter(fileName, true);
+			out = new BufferedWriter(fstream);
+			out.write("Document Sample for " + ds.category + "\n");
+			out.write("##############################\n");
+			int docCount = 0;
+			for (String word : ds.wordSet) {
+				out.write(word + " - ");
+				for (String url : ds.filteredURLs) {
+					Document d = ds.urlMap.get(url);
+					if(d.words.contains(word))
+							docCount++;
+				}
+				out.write(docCount + "\n");
+				docCount = 0;
+			}
+			out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	/**
@@ -234,7 +360,7 @@ public class YahooProber {
 			for (int i = 1; i < queryTerms.length; i++)
 				query += " " + queryTerms[i];
 			query = URLEncoder.encode(query, "UTF-8");
-			System.out.println("Probing Query: " + query);
+			//System.out.println("Probing Query: " + query);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -242,7 +368,7 @@ public class YahooProber {
 		URL url;
 		try {
 			url = new URL("http://boss.yahooapis.com/ysearch/web/v1/" + query
-					+ "?appid=" + API_KEY + "&sites=" + this.url + "&start=0"
+					+ "?appid=" + API_KEY + "&sites=" + this.databaseURL + "&start=0"
 					+ "&count=" + YahooProber.topResults + "&format=json");
 			URLConnection connection = url.openConnection();
 
@@ -265,20 +391,17 @@ public class YahooProber {
 					"resultset_web");
 			// this.cachedResults.put(, value)
 
-			System.out.println("\nQuerying for " + query);
 			for (int i = 0; i < YahooProber.topResults; i++) {
 				if (ja.length() == i) {
 					break;
 				}
-				System.out.print((i + 1) + ". ");
+				// System.out.print((i + 1) + ". ");
 				j = ja.getJSONObject(i);
-				System.out.println(j.getString("url"));
+				// System.out.println(j.getString("url"));
 				docs.add(j.getString("url"));
 
 			}
-			System.err.println("Number of matches for query " + query + " ="
-					+ numHits);
-
+			// System.err.println("Number of matches :" + query + " ="+ numHits);
 			return numHits;
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -291,117 +414,6 @@ public class YahooProber {
 		return 0;
 	}
 
-	public void buildContentSummary() {
-
-		/* document sampling after category selection */
-		List<DocumentSample> docSample = new ArrayList<DocumentSample>();
-		DocumentSample dc;
-		List<String> childList = new ArrayList<String>();
-		for (String fc : this.catSpecificity.keySet()) {
-
-			dc = new DocumentSample();
-			// category for this document sample
-			dc.category = fc;
-			// all the documents related to this category
-			dc.filteredURLs = cachedResults.get(fc);
-			docSample.add(dc);
-
-			String tempCat = fc;
-			String parent = null;
-			while ((parent = this.getParent(tempCat)) != null) {
-				childList.add(tempCat);
-				dc = new DocumentSample();
-				dc.category = parent;
-				dc.filteredURLs = cachedResults.get(parent);
-				// add all the child documents
-				for (String c : childList) {
-					dc.filteredURLs.addAll(cachedResults.get(c));
-				}
-				tempCat = parent;
-			}
-		}
-
-		// fetch all the webpages for each doc sample
-		for (DocumentSample ds : docSample) {
-			int docId = 0;
-			for (String url : ds.filteredURLs) {
-				Set<String> words = URLProcessor.runLynx(url);
-				// calculate the word frequency in this document
-				Document d = new Document(url);
-				d = this.wordFrequency(words, d);
-				ds.docMap.put(url, d);
-				// create a documentId map and put it in global wordSet
-				ds.wordSet.addAll(d.wordFreqMap.keySet());
-				ds.docIdMap.put(docId, url);
-				docId++;
-			}
-
-			// setting the wordIdMap, words are already in sorted order
-			int wordId = 0;
-			Map<Integer, String> wordIdMap = ds.wordIdMap;
-			for (String word : ds.wordSet) {
-				wordIdMap.put(wordId, word);
-				wordId++;
-			}
-
-			// raw frequency matrix
-			int numDocs = ds.docIdMap.size();
-			int numWords = ds.wordSet.size();
-			Document doc;
-			double[][] data = new double[numWords][numDocs];
-			for (int i = 0; i < numWords; i++) {
-				for (int j = 0; j < numDocs; j++) {
-					String docName = ds.docIdMap.get(j);
-					doc = ds.docMap.get(docName);
-					String word = ds.wordIdMap.get(i);
-					int count = doc.wordFreqMap.get(word);
-					data[i][j] = count;
-				}
-			}
-
-			// display result
-			this.display(ds.docIdMap, ds.wordIdMap, data);
-		}
-	}
-
-	/*
-	 * Display the word-document matrix
-	 */
-	public void display(Map<Integer, String> docIdMap,
-			Map<Integer, String> wordIdMap, double[][] data) {
-		PrintStream writer = new PrintStream(System.out, true);
-		writer.printf("%15s", " ");
-		for (Integer d : docIdMap.keySet()) {
-			writer.printf("%8s", "D" + d);
-		}
-		writer.println();
-		int numDocs = docIdMap.size();
-		int numWords = wordIdMap.size();
-		for (int i = 0; i < numWords; i++) {
-			writer.printf("%20s", wordIdMap.get(i));
-			for (int j = 0; j < numDocs; j++) {
-				writer.printf("%8.4f", data[i][j]);
-			}
-			writer.println();
-		}
-		writer.flush();
-	}
-
-	private Document wordFrequency(Set<String> words, Document d) {
-		Map<String, Integer> terms = d.wordFreqMap;
-		// Increase the term frequency
-		for (String s : words) {
-			if (terms.containsKey(s.toLowerCase())) {
-				int freq = terms.get(s.toLowerCase());
-				terms.put(s.toLowerCase(), ++freq);
-			} else {
-				terms.put(s.toLowerCase(), 1);
-			}
-		}
-		return d;
-	}
-
-	
 	public static void main(String args[]) {
 		if (args.length >= 3) {
 			System.out.println("Using command line arguments...");

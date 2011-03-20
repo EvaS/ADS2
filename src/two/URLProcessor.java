@@ -16,7 +16,8 @@ public class URLProcessor {
 
 	        try {
 	        	
-	            String cmdline[] = {"/usr/local/bin/lynx", "--dump", url };
+	        	/* change to /usr/local/bin/lynx" for clic machines */
+	            String cmdline[] = {"/usr/bin/lynx", "--dump", url };
 	            Process p = Runtime.getRuntime().exec(cmdline);
 	            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 	            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
