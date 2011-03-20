@@ -55,7 +55,7 @@ public class YahooProber {
 	// Number of hierarchy levels
 	private static int levels = 2;
 	// Default url
-	private String databaseURL = "hardwarecentral.com";
+	private String databaseURL = "www.afaa.com";
 	// Default specificity
 	private double SPECIFICITY = 0.6;
 	// Default coverage
@@ -134,6 +134,7 @@ public class YahooProber {
 				System.err.println(cat);
 				Set<String> docs = new HashSet<String>();
 				cachedResults.put(catName, docs);
+				System.out.println("Put "+catName);
 				int coverage = 0;
 				try {
 					FileInputStream fstream = new FileInputStream(cat);
@@ -153,7 +154,7 @@ public class YahooProber {
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
 						int numhits = this.poseQuery(queryTerms, docs);
 						// Try to avoid abusing the site
-						// Thread.sleep(5000);
+						 Thread.sleep(3000);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
@@ -240,6 +241,8 @@ public class YahooProber {
 				dc.filteredURLs = cachedResults.get(parent);
 				// add all the child documents
 				for (String c : childList) {
+					if(cachedResults.get(c)==null)
+						continue;
 					dc.filteredURLs.addAll(cachedResults.get(c));
 				}
 				// add to the document class list
@@ -253,6 +256,8 @@ public class YahooProber {
 		// fetch all the webpages for each doc sample
 		for (DocumentSample ds : docSample) {
 			int docId = 0;
+			if(ds.filteredURLs==null)
+				continue;
 			System.out.println("Building document sample for " + ds.category);
 			for (String url : ds.filteredURLs) {
 				System.out.printf("[%d] Getting page: %s \n",(docId+1),url);
@@ -344,7 +349,6 @@ public class YahooProber {
 
 			ja = json.getJSONObject("ysearchresponse").getJSONArray(
 					"resultset_web");
-			// this.cachedResults.put(, value)
 
 			for (int i = 0; i < YahooProber.topResults; i++) {
 				if (ja.length() == i) {
