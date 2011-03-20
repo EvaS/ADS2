@@ -7,14 +7,12 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -30,8 +28,6 @@ import org.json.JSONObject;
 class DocumentSample {
 	String category;
 	Set<String> filteredURLs = new HashSet<String>();
-	Map<Integer, String> urlIdMap = new HashMap<Integer, String>();
-	Map<Integer, String> wordIdMap = new HashMap<Integer, String>();
 	// Stores the global word set of all the included documents
 	Set<String> wordSet = new TreeSet<String>();
 	Map<String, Document> urlMap = new HashMap<String, Document>();
@@ -76,46 +72,6 @@ public class YahooProber {
 	private HashMap<String, Integer> catCoverage = new HashMap<String, Integer>();
 	private HashMap<String, Integer> overallCoverage = new HashMap<String, Integer>();
 
-	// List of stopwords:
-	// http://www.textfixer.com/resources/common-english-words.txt
-	private static final String STOP_WORDS = "a aa aaa about above across after again against all almost alone along "
-			+ "already also although always among an and another any anybody anyone "
-			+ "anything anywhere are area areas as ask asked asking asks at "
-			+ "away b back backed backing backs be became because become becomes "
-			+ "been before began behind being beings best better between big both but "
-			+ "by c came can cannot case cases certain certainly clear clearly com come "
-			+ "could d did differ different differently do does done down downed "
-			+ "downing downs during e each early either end ended ending ends enough "
-			+ "even evenly ever every everybody everyone everything everywhere f "
-			+ "fact facts far felt few find finds for from full fully further furthered "
-			+ "furthering furthers g gave general generally get gets give given gives go going "
-			+ "goof goods got great greater greatest group grouped grouping groups h had has have "
-			+ "having he her here herself high higher highest him himself his how however i if "
-			+ "important in interest interested interesting interests into is it its itself "
-			+ "j just k keep keeps kind kind knew know known l large largely last later latest least "
-			+ "less let lets like likely long longer longest m made make making man many may me member "
-			+ "members men might more most mostly mr mrs much must my myself n necessary need needed needing "
-			+ "needs never new newer newest next no nobody non noone not nothing now nowhere number numbers "
-			+ "o of off often on once one only open opened opening opens or order ordered "
-			+ "ordering orders other others our out over p part parted parting parts per pre perhaps place places "
-			+ "point pointed pointing points present presented presenting presents problem problems put "
-			+ "puts q quite r rather really right room rooms s said same saw say says second see "
-			+ "seem seemed seemingseems sees several shall she should show showed showing shows side sides "
-			+ "since small smaller smallest so some somebody someone something somewhere state states "
-			+ "still such sure t take taken than that the their them then there therefore these they "
-			+ "thing things think thinks this those though thought thoughts three through thus to today "
-			+ "together too took toward turn turned turning turns two u under until up upon "
-			+ "us use used uses v very w want wanting wants was way ways we well wells went were "
-			+ "what when where whether which while who whole whose why will within without "
-			+ "work worked working works would x y year years yet young you younger youngest your yours z"
-			+ "online welcome with specific site";
-
-	private static Set<String> stopWords;
-	static {
-		stopWords = new HashSet<String>();
-		stopWords.addAll(Arrays.asList(STOP_WORDS.split(" ")));
-	}
-
 	/*
 	 * Default constructor
 	 */
@@ -135,9 +91,9 @@ public class YahooProber {
 		this.classifyDB();
 	}
 
-	/*
-	 * Initialize category tree
-	 */
+	/*	
+    * Initialize category tree
+    */
 	public void initalizeTree() {
 		this.catNodes.put("Sports", "Root");
 		this.catNodes.put("Health", "Root");
@@ -155,10 +111,12 @@ public class YahooProber {
 	}
 
 	public int getOverallCoverage(String catNode) {
+
 		return this.overallCoverage.get(catNode);
 	}
 
 	public int getCoverage(String catNode) {
+
 		return this.catCoverage.get(catNode);
 	}
 
@@ -310,7 +268,7 @@ public class YahooProber {
 			// display result
 			this.display(ds, fileName);
 		}
-		System.out.println("Finished generating document samples..");
+		System.out.println("\n\nFinished generating document samples..");
 	}
 
 	/*
