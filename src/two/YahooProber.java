@@ -119,11 +119,12 @@ public class YahooProber {
 	public int getCoverage(String catNode) {
 		return this.catCoverage.get(catNode);
 	}
-	
-	public boolean hasChild(String cat){
-		
-		for(String c:this.catNodes.keySet()){
-			if(this.getParent(c).equals(cat) && this.catSpecificity.containsKey(c))
+
+	public boolean hasChild(String cat) {
+
+		for (String c : this.catNodes.keySet()) {
+			if (this.getParent(c).equals(cat)
+					&& this.catSpecificity.containsKey(c))
 				return true;
 		}
 		return false;
@@ -163,8 +164,8 @@ public class YahooProber {
 						}
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
 						int numhits = this.poseQuery(queryTerms, docs);
-						// Try to avoid abusing the site
-						Thread.sleep(3000);
+						// Try to avoid abusing the site - this is ok as we are hitting Yahoo Servers
+						// Thread.sleep(3000);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
@@ -198,11 +199,11 @@ public class YahooProber {
 				if (this.getCoverage(c) < this.COVERAGE
 						|| specificity < this.SPECIFICITY) {
 					toRemove.add(catName);
-				}
-				else
-				{
-					System.out.println("Coverage for category:"+c+" is "+this.getCoverage(c));
-					System.out.println("Specificity for category:"+c+" is "+specificity);
+				} else {
+					System.out.println("Coverage for category:" + c + " is "
+							+ this.getCoverage(c));
+					System.out.println("Specificity for category:" + c + " is "
+							+ specificity);
 				}
 			}
 			System.out.println("\n");
@@ -227,14 +228,14 @@ public class YahooProber {
 		// Classified categories
 		System.out.println("Classification:");
 		for (String fc : this.catSpecificity.keySet()) {
-			if(this.hasChild(fc))
+			if (this.hasChild(fc))
 				continue;
-			String fullCat=new String(fc);
-			String p=this.getParent(fc);
-			//Print full path for classified categories
-			while(p!=null) {
-				fullCat=p+"/"+fullCat;
-				p=this.getParent(p);
+			String fullCat = new String(fc);
+			String p = this.getParent(fc);
+			// Print full path for classified categories
+			while (p != null) {
+				fullCat = p + "/" + fullCat;
+				p = this.getParent(p);
 			}
 			System.out.println(fullCat);
 		}
@@ -250,7 +251,7 @@ public class YahooProber {
 	public void buildContentSummary() {
 
 		/* document sampling after category selection */
-		List<DocumentSample> docSample = new ArrayList<DocumentSample>();
+		Map<String, DocumentSample> docSample = new HashMap<String, DocumentSample>();
 		DocumentSample dc;
 		List<String> childList = new ArrayList<String>();
 		// For all classified categories
@@ -260,23 +261,33 @@ public class YahooProber {
 			dc.category = fc;
 			// all the documents related to this category
 			dc.filteredURLs = cachedResults.get(fc);
-			docSample.add(dc);
+			docSample.put(fc, dc);
 			String tempCat = fc;
 			String parent = null;
 			while ((parent = this.getParent(tempCat)) != null) {
 				childList.add(tempCat);
-				dc = new DocumentSample();
-				dc.category = parent;
-				dc.filteredURLs = cachedResults.get(parent);
-				// add all the child documents
-				for (String c : childList) {
-					// Leaf categories do not have samples
-					if (cachedResults.get(c) == null)
-						continue;
-					dc.filteredURLs.addAll(cachedResults.get(c));
+				// fix for multiple children: check whether this parent has been
+				// visited previously
+				if (docSample.containsKey(parent)) {
+					Set<String> urls = docSample.get(tempCat).filteredURLs;
+					Set<String> parentUrls = docSample.get(parent).filteredURLs;
+ 					if(parentUrls != null && urls != null)
+ 						parentUrls.addAll(urls);
+				} else {
+					dc = new DocumentSample();
+					dc.category = parent;
+					dc.filteredURLs = cachedResults.get(parent);
+					// add all the child documents
+					for (String c : childList) {
+						// Leaf categories do not have samples
+						if (cachedResults.get(c) == null)
+							continue;
+						dc.filteredURLs
+								.addAll(docSample.get(c).filteredURLs);
+					}
+					// add to the document class list
+					docSample.put(parent, dc);
 				}
-				// add to the document class list
-				docSample.add(dc);
 				tempCat = parent;
 			}
 			// prepare for the next sample
@@ -284,7 +295,7 @@ public class YahooProber {
 		}
 
 		// fetch all the webpages for each doc sample
-		for (DocumentSample ds : docSample) {
+		for (DocumentSample ds : docSample.values()) {
 			int docId = 0;
 			// Skip leaf categories
 			if (ds.filteredURLs == null)
@@ -348,7 +359,7 @@ public class YahooProber {
 
 		String query = new String();
 		JSONArray ja = new JSONArray();
-		//Convert spaces to + to make a valid URL
+		// Convert spaces to + to make a valid URL
 		try {
 			for (int i = 1; i < queryTerms.length; i++)
 				query += " " + queryTerms[i];
@@ -374,7 +385,7 @@ public class YahooProber {
 			}
 			String response = builder.toString();
 			JSONObject json = new JSONObject(response);
-			//Get number of matches
+			// Get number of matches
 			String strHits = (String) (json.getJSONObject("ysearchresponse")
 					.get("totalhits"));
 			int numHits = Integer.parseInt(strHits);
