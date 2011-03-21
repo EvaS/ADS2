@@ -30,19 +30,7 @@ class DocumentSample {
 	Set<String> filteredURLs = new HashSet<String>();
 	// Stores the global word set of all the included documents
 	Set<String> wordSet = new TreeSet<String>();
-	Map<String, Document> urlMap = new HashMap<String, Document>();
-}
-
-/**
- * Maintained for each URL / document
- */
-class Document {
-	String url;
-	Set<String> words = new HashSet<String>();
-
-	public Document(String url) {
-		this.url = url;
-	}
+	Map<String, Set<String>> urlMap = new HashMap<String, Set<String>>();
 }
 
 /**
@@ -142,10 +130,13 @@ public class YahooProber {
 		do {
 			// for storing child categories while iterating
 			HashSet<String> tempCats = new HashSet<String>();
+			Set<String> docs = null;
 			for (String cat : categories) {
 				String catName = cat.split("queries\\/|.txt")[1];
-				Set<String> docs = new HashSet<String>();
-				cachedResults.put(catName, docs);
+				if(!cachedResults.containsKey(catName)){
+					docs = new HashSet<String>();
+					cachedResults.put(catName, docs);
+				}
 				int coverage = 0;
 				try {
 					FileInputStream fstream = new FileInputStream(cat);
@@ -163,6 +154,14 @@ public class YahooProber {
 							cCoverage = 0;
 						}
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
+						/* this is for possible leaf node sampling, sample implementation does not do this */
+						/*
+						if(!cachedResults.containsKey(queryTerms[0])){
+							// possible leaf node
+							docs = new HashSet<String>();
+							cachedResults.put(queryTerms[0], docs);
+						}*/
+						
 						int numhits = this.poseQuery(queryTerms, docs);
 						// Try to avoid abusing the site - this is ok as we are hitting Yahoo Servers
 						// Thread.sleep(3000);
@@ -271,8 +270,8 @@ public class YahooProber {
 				if (docSample.containsKey(parent)) {
 					Set<String> urls = docSample.get(tempCat).filteredURLs;
 					Set<String> parentUrls = docSample.get(parent).filteredURLs;
- 					if(parentUrls != null && urls != null)
- 						parentUrls.addAll(urls);
+					if (parentUrls != null && urls != null)
+						parentUrls.addAll(urls);
 				} else {
 					dc = new DocumentSample();
 					dc.category = parent;
@@ -282,8 +281,7 @@ public class YahooProber {
 						// Leaf categories do not have samples
 						if (cachedResults.get(c) == null)
 							continue;
-						dc.filteredURLs
-								.addAll(docSample.get(c).filteredURLs);
+						dc.filteredURLs.addAll(docSample.get(c).filteredURLs);
 					}
 					// add to the document class list
 					docSample.put(parent, dc);
@@ -304,9 +302,7 @@ public class YahooProber {
 			for (String url : ds.filteredURLs) {
 				System.out.printf("[%d] Getting page: %s \n", (docId + 1), url);
 				Set<String> words = URLProcessor.runLynx(url);
-				Document d = new Document(url);
-				d.words = words;
-				ds.urlMap.put(url, d);
+				ds.urlMap.put(url, words);
 				ds.wordSet.addAll(words);
 				docId++;
 			}
@@ -334,8 +330,8 @@ public class YahooProber {
 			for (String word : ds.wordSet) {
 				out.write(word + " # ");
 				for (String url : ds.filteredURLs) {
-					Document d = ds.urlMap.get(url);
-					if (d.words.contains(word))
+					Set<String> words = ds.urlMap.get(url);
+					if (words.contains(word))
 						docCount++;
 				}
 				out.write(docCount + "\n");
@@ -400,7 +396,10 @@ public class YahooProber {
 					break;
 				}
 				j = ja.getJSONObject(i);
-				docs.add(j.getString("url"));
+				if(docs != null)
+					docs.add(j.getString("url"));
+				else
+					System.err.println("poseQuery : document object passesd is null");
 			}
 			return numHits;
 		} catch (MalformedURLException e) {
