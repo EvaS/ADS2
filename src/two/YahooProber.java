@@ -43,7 +43,7 @@ public class YahooProber {
 	// Number of hierarchy levels
 	private static int levels = 2;
 	// Default url
-	private String databaseURL = "www.afaa.com";
+	private String databaseURL = "hardwarecentral.com";
 	// Default specificity
 	private double SPECIFICITY = 0.3;
 	// Default coverage
@@ -161,11 +161,12 @@ public class YahooProber {
 							docs = new HashSet<String>();
 							cachedResults.put(queryTerms[0], docs);
 						}*/
-						
-						int numhits = this.poseQuery(queryTerms, docs);
-
-						// Try to avoid abusing the site - this is ok as we are hitting Yahoo Servers
-						// Thread.sleep(3000);
+						int numhits,tries=0;
+						while(((numhits=this.poseQuery(queryTerms, docs))==-1) && (tries<100))
+							tries++;
+						numhits=this.poseQuery(queryTerms, docs);
+						// Try to avoid abusing the site 
+						 Thread.sleep(5000);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
@@ -403,8 +404,10 @@ public class YahooProber {
 			return numHits;
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
+		}// Handles HTTP response error code: 503
+		catch (IOException e) {
 			e.printStackTrace();
+			return -1;
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
