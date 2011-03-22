@@ -44,9 +44,9 @@ public class YahooProber {
 	// Number of hierarchy levels
 	private static int levels = 2;
 	// Default url
-	private String databaseURL = "hardwarecentral.com";
+	private String databaseURL = "yahoo.com";
 	// Default specificity
-	private double SPECIFICITY = 0.3;
+	private double SPECIFICITY = 0.6;
 	// Default coverage
 	private int COVERAGE = 100;
 	// Number of top results to use for content-summary
@@ -108,8 +108,8 @@ public class YahooProber {
 	public int getCoverage(String catNode) {
 		return this.catCoverage.get(catNode);
 	}
-	
-	public double getSpecificity(String catNode){
+
+	public double getSpecificity(String catNode) {
 		return this.catSpecificity.get(catNode);
 	}
 
@@ -132,7 +132,8 @@ public class YahooProber {
 		categories.add("queries/Root.txt");
 		int level = 1;
 		System.out.println("Classifying ...");
-		this.catSpecificity.put("Root",1.0);
+		this.catSpecificity.put("Root", 1.0);
+		// For all levels of the category-hierarchy
 		do {
 			// for storing child categories while iterating
 			HashSet<String> tempCats = new HashSet<String>();
@@ -160,16 +161,8 @@ public class YahooProber {
 							cCoverage = 0;
 						}
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
-						/*
-						 * this is for possible leaf node sampling, sample
-						 * implementation does not do this
-						 */
-						/*
-						 * if(!cachedResults.containsKey(queryTerms[0])){ //
-						 * possible leaf node docs = new HashSet<String>();
-						 * cachedResults.put(queryTerms[0], docs); }
-						 */
 						int numhits, tries = 0;
+						// Try to fetch results until no exception occurs
 						while (((numhits = this.poseQuery(queryTerms, docs)) == -1)
 								&& (tries < 100))
 							tries++;
@@ -180,18 +173,11 @@ public class YahooProber {
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
 					}
-					//Add the coverage of the last sub-category
+					// Add the coverage of the last sub-category
 					this.catCoverage.put(previousCategory, cCoverage);
 					in.close();
 					// Compute the overall coverage of this category
 					this.overallCoverage.put(catName, coverage);
-					if (this.getParent(catName) != null) {
-						double specificity = (this.getCoverage(catName)
-								* this.getSpecificity(this.getParent(catName)))
-								/ this.getOverallCoverage(this
-										.getParent(catName));
-						this.catSpecificity.put(catName, specificity);
-					}
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -205,8 +191,10 @@ public class YahooProber {
 			// Check the specificity and coverage of each category
 			for (String catName : categories) {
 				String c = catName.split("queries\\/|.txt")[1];
-				double specificity = (this.getCoverage(c) * this.getSpecificity(this.getParent(c)))
+				double specificity = (this.getCoverage(c) * this
+						.getSpecificity(this.getParent(c)))
 						/ this.overallCoverage.get(this.getParent(c));
+				this.catSpecificity.put(c, specificity);
 				if (this.getCoverage(c) < this.COVERAGE
 						|| specificity < this.SPECIFICITY) {
 					toRemove.add(catName);
@@ -222,16 +210,12 @@ public class YahooProber {
 				String c = tr.split("queries\\/|.txt")[1];
 				categories.remove(tr);
 				this.catCoverage.remove(c);
+				this.catSpecificity.remove(c);
 			}
 			level++;
 		} while (level <= levels);
+
 		System.out.println("\n");
-		for (String catName : categories) {
-			String c = catName.split("queries\\/|.txt")[1];
-			double specificity = this.getCoverage(c) * 1.0f
-					/ this.getOverallCoverage(this.getParent(c));
-			this.catSpecificity.put(c, specificity);
-		}
 
 		// Classified categories
 		System.out.println("Classification:");
@@ -248,7 +232,7 @@ public class YahooProber {
 			System.out.println(fullCat);
 		}
 		System.out.println("\n");
-		// build content summaries
+		//Build content summaries
 		this.buildContentSummary();
 		return null;
 	}
@@ -331,13 +315,12 @@ public class YahooProber {
 		FileWriter fstream;
 		BufferedWriter out;
 		try {
-			fstream = new FileWriter(fileName, true);
+			fstream = new FileWriter(fileName);
 			out = new BufferedWriter(fstream);
 			out.write("Document Sample for " + ds.category + "\n");
-			out.write("##############################\n");
 			int docCount = 0;
 			for (String word : ds.wordSet) {
-				out.write(word + " # ");
+				out.write(word + "#");
 				for (String url : ds.filteredURLs) {
 					Set<String> words = ds.urlMap.get(url);
 					if (words.contains(word))
