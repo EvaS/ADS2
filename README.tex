@@ -18,21 +18,45 @@ Evangelia  Sitaridi \\ es2996@cs.columbia.edu
 \maketitle
 
 \section{Description}
-For classification and contect summary construction we used the fixed classification tree \ref{fig:tree}, given in the description of the project. The queries
+For classification and content summary construction we used the fixed classification tree \ref{fig:tree}, given in the description of the project. The queries
 used for the classification are in directory queries, included in the submission compressed file.
-\begin{figure}[htb!]
-\centering
-\includegraphics[width=90mm]{cattree}
-\caption{Category tree}
-\label{fig:tree}
-\end{figure}
+
+%\begin{figure}[htb!]
+%\centering
+%\includegraphics[width=90mm]{cattree}
+%\caption{Category tree}
+%\label{fig:tree}
+%\end{figure}
 
 \subsection{Classification}
-We compute the following metrics for each category:
+To classify the given database we traverse each level of the category tree and compute the following metrics for each category:
 
 \[ECoverage(D,Ci)=\sum_{q \ is \ a \ query \ probe \ for \ C_i}{f(q)} \]
 
 \[ESpecificity(D, C_i ) = \frac{ESpecificity(D, Parent(C_i )) \times ECoverage(D, C_i )} {\sum_{C_j \  is \ a \ child \ of \ Parent(C_i)} {ECoverage(D,C_j)}} \]
+
+pruning the categories that do not meet the specificity and coverage criteria.
+
+\begin{verbatim}
+Classify(Ts,Tc)
+    Cat={Root}
+    insert Root to L
+    P=Root
+    level=0
+    do{
+    for each category P in L
+        read P query-file  F
+        add to L children of P
+        for each query q in F
+            pose-query(q)
+            store top-4 results
+            update coverage of P 
+            update coverage of q.child
+         if(P.specificity>=Ts && P.coverage>=Tc)
+            add P to Cat
+    }while(levels<=2)
+    return Cat
+\end{verbatim}
 
 \subsection{Content Summary Construction}
 
@@ -45,7 +69,7 @@ For each category node C (e.g., "Root") that you "visit" while you classify data
 
 \begin{itemize}
 \item Exception handling
-\item Multi-word probes
+\item Multi-word probes: we decided not include multi-word entries in the content summaries.
 \end{itemize}
 
 \section{Example}
