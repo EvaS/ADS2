@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -107,6 +108,10 @@ public class YahooProber {
 	public int getCoverage(String catNode) {
 		return this.catCoverage.get(catNode);
 	}
+	
+	public double getSpecificity(String catNode){
+		return this.catSpecificity.get(catNode);
+	}
 
 	public boolean hasChild(String cat) {
 
@@ -127,13 +132,14 @@ public class YahooProber {
 		categories.add("queries/Root.txt");
 		int level = 1;
 		System.out.println("Classifying ...");
+		this.catSpecificity.put("Root",1.0);
 		do {
 			// for storing child categories while iterating
 			HashSet<String> tempCats = new HashSet<String>();
 			Set<String> docs = null;
 			for (String cat : categories) {
 				String catName = cat.split("queries\\/|.txt")[1];
-				if(!cachedResults.containsKey(catName)){
+				if (!cachedResults.containsKey(catName)) {
 					docs = new HashSet<String>();
 					cachedResults.put(catName, docs);
 				}
@@ -154,30 +160,34 @@ public class YahooProber {
 							cCoverage = 0;
 						}
 						tempCats.add("queries/" + queryTerms[0] + ".txt");
-						/* this is for possible leaf node sampling, sample implementation does not do this */
 						/*
-						if(!cachedResults.containsKey(queryTerms[0])){
-							// possible leaf node
-							docs = new HashSet<String>();
-							cachedResults.put(queryTerms[0], docs);
-						}*/
-						int numhits,tries=0;
-						while(((numhits=this.poseQuery(queryTerms, docs))==-1) && (tries<100))
+						 * this is for possible leaf node sampling, sample
+						 * implementation does not do this
+						 */
+						/*
+						 * if(!cachedResults.containsKey(queryTerms[0])){ //
+						 * possible leaf node docs = new HashSet<String>();
+						 * cachedResults.put(queryTerms[0], docs); }
+						 */
+						int numhits, tries = 0;
+						while (((numhits = this.poseQuery(queryTerms, docs)) == -1)
+								&& (tries < 100))
 							tries++;
-						numhits=this.poseQuery(queryTerms, docs);
-						// Try to avoid abusing the site 
-						 Thread.sleep(5000);
+						numhits = this.poseQuery(queryTerms, docs);
+						// Try to avoid abusing the site
+						Thread.sleep(2000);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
 					}
+					//Add the coverage of the last sub-category
 					this.catCoverage.put(previousCategory, cCoverage);
 					in.close();
 					// Compute the overall coverage of this category
 					this.overallCoverage.put(catName, coverage);
 					if (this.getParent(catName) != null) {
-						double specificity = this.getCoverage(catName)
-								* 1.0
+						double specificity = (this.getCoverage(catName)
+								* this.getSpecificity(this.getParent(catName)))
 								/ this.getOverallCoverage(this
 										.getParent(catName));
 						this.catSpecificity.put(catName, specificity);
@@ -195,19 +205,18 @@ public class YahooProber {
 			// Check the specificity and coverage of each category
 			for (String catName : categories) {
 				String c = catName.split("queries\\/|.txt")[1];
-				double specificity = this.getCoverage(c) * 1.0
+				double specificity = (this.getCoverage(c) * this.getSpecificity(this.getParent(c)))
 						/ this.overallCoverage.get(this.getParent(c));
 				if (this.getCoverage(c) < this.COVERAGE
 						|| specificity < this.SPECIFICITY) {
 					toRemove.add(catName);
-				} else {
-					System.out.println("Coverage for category:" + c + " is "
-							+ this.getCoverage(c));
-					System.out.println("Specificity for category:" + c + " is "
-							+ specificity);
 				}
+				System.out.println("Coverage for category:" + c + " is "
+						+ this.getCoverage(c));
+				System.out.println("Specificity for category:" + c + " is "
+						+ specificity);
+
 			}
-			System.out.println("\n");
 			// Remove all categories which are < Ts or Tc
 			for (String tr : toRemove) {
 				String c = tr.split("queries\\/|.txt")[1];
@@ -216,7 +225,7 @@ public class YahooProber {
 			}
 			level++;
 		} while (level <= levels);
-
+		System.out.println("\n");
 		for (String catName : categories) {
 			String c = catName.split("queries\\/|.txt")[1];
 			double specificity = this.getCoverage(c) * 1.0f
@@ -371,7 +380,7 @@ public class YahooProber {
 					+ "&start=0" + "&count=" + YahooProber.topResults
 					+ "&format=json");
 			URLConnection connection = url.openConnection();
-
+			connection.setConnectTimeout(1000);
 			String line;
 			StringBuilder builder = new StringBuilder();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -396,20 +405,23 @@ public class YahooProber {
 					break;
 				}
 				j = ja.getJSONObject(i);
-				if(docs != null)
+				if (docs != null)
 					docs.add(j.getString("url"));
 				else
-					System.err.println("poseQuery : document object passesd is null");
+					System.err
+							.println("poseQuery : document object passesd is null");
 			}
 			return numHits;
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
-		}// Handles HTTP response error code: 503
+		} catch (ConnectException e) {
+			return -1;
+		}
+		// Handles HTTP response error code: 503
 		catch (IOException e) {
-			e.printStackTrace();
 			return -1;
 		} catch (JSONException e) {
-			e.printStackTrace();
+			return -1;
 		}
 
 		return 0;
