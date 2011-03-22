@@ -1,6 +1,8 @@
 \documentclass[11pt]{article}
 \usepackage[margin=2.7cm,nohead]{geometry}
 \usepackage{url}
+\usepackage{graphicx}
+
 \title{Project 2 \\ Advanced Databases \\}
 
 \author{
@@ -14,9 +16,41 @@ Evangelia  Sitaridi \\ es2996@cs.columbia.edu
 
 \begin{document}
 \maketitle
+
+\section{Description}
+For classification and contect summary construction we used the fixed classification tree \ref{fig:tree}, given in the description of the project. The queries
+used for the classification are in directory queries, included in the submission compressed file.
+\begin{figure}[htb!]
+\centering
+\includegraphics[width=90mm]{cattree}
+\caption{Category tree}
+\label{fig:tree}
+\end{figure}
+
+\subsection{Classification}
+We compute the following metrics for each category:
+
+\[ECoverage(D,Ci)=\sum_{q \ is \ a \ query \ probe \ for \ C_i}{f(q)} \]
+
+\[ESpecificity(D, C_i ) = \frac{ESpecificity(D, Parent(C_i )) \times ECoverage(D, C_i )} {\sum_{C_j \  is \ a \ child \ of \ Parent(C_i)} {ECoverage(D,C_j)}} \]
+
+\subsection{Content Summary Construction}
+
+For each category node C (e.g., "Root") that you "visit" while you classify database D (using the Part 1 procedure):
+
+    For each query q associated with this node retrieve the top-4 pages returned by Yahoo! for the query on the database D.
+
+
+\section{Assumptions}
+
+\begin{itemize}
+\item Exception handling
+\item Multi-word probes
+\end{itemize}
+
 \section{Example}
 To test the classification results of QProber we used the provided the examples in the project description and several of the examples from a list
-of Largest Deep Web Sites \cite{AIP}.
+of Largest Deep Web Sites \cite{AIP}. The following results are for $T_s$=0.6 and coverage $T_c$=100.
 
 \begin{table}
 \begin{tabular}{|c|c|c|}
@@ -101,7 +135,8 @@ BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO
 
 
 \begin{thebibliography}{50}
-		\bibitem{AIP} Largest Deep Web Sites, \url{http://aip.completeplanet.com/aip-engines/help/largest_engines.jsp}
+		\bibitem{AIP} \textit{Largest Deep Web Sites}, \url{http://aip.completeplanet.com/aip-engines/help/largest_engines.jsp}
+		\bibitem{QProb} \textit{QProber: A system for automatic classification of hidden-web databases}, Panagiotis G. Ipeirotis,  Luis Gravano,  Mehran Sahami, 2003
 \end{thebibliography}
 
 \end{document}
