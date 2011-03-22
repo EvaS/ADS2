@@ -76,7 +76,7 @@ public class YahooProber {
 		this.SPECIFICITY = specificity;
 		this.COVERAGE = coverage;
 		this.initalizeTree();
-		this.classifyDB();
+		this.qProbe();
 	}
 
 	/**
@@ -121,6 +121,14 @@ public class YahooProber {
 				return true;
 		}
 		return false;
+	}
+	
+	/*
+	 * Implements QProber basic steps
+	 */
+	public void qProbe() {
+		this.classifyDB();
+		this.buildContentSummary();
 	}
 
 	/**
@@ -232,8 +240,6 @@ public class YahooProber {
 			System.out.println(fullCat);
 		}
 		System.out.println("\n");
-		//Build content summaries
-		this.buildContentSummary();
 		return null;
 	}
 
