@@ -18,8 +18,8 @@ Evangelia  Sitaridi \\ es2996@cs.columbia.edu
 \maketitle
 
 \section{Description}
-For classification and content summary construction we used the fixed classification tree \ref{fig:tree}, given in the description of the project. The queries
-used for the classification are in directory queries, included in the submission compressed file.
+For classification and content summary construction we used the fixed classification tree of figure \ref{fig:tree}, given in the description of the project. The queries
+used for the classification are in directory queries, included in the submission compressed file. Our implementation has two main classes shown in \ref{fig:classes}.
 
 \begin{figure}[htb!]
 \centering
@@ -28,14 +28,22 @@ used for the classification are in directory queries, included in the submission
 \label{fig:tree}
 \end{figure}
 
+
+\begin{figure}[htb!]
+\centering
+\includegraphics[width=35mm]{classes}
+\caption{Implementation Classes}
+\label{fig:classes}
+\end{figure}
+
 \subsection{Classification}
 To classify the given database we traverse each level of the category tree and compute the following metrics for each category:
 
-\[ECoverage(D,Ci)=\sum_{q \ is \ a \ query \ probe \ for \ C_i}{f(q)} \]
+\[ECoverage(D,Ci)=\sum_{\ \ q: \ query \ probe \ for \ C_i}{f(q)} \]
 
 \[ESpecificity(D, C_i ) = \frac{ESpecificity(D, Parent(C_i )) \times ECoverage(D, C_i )} {\sum_{C_j \  is \ a \ child \ of \ Parent(C_i)} {ECoverage(D,C_j)}} \]
 
-pruning the categories that do not meet the specificity and coverage criteria.
+pruning the categories that do not meet the specificity and coverage criteria. We implemented an iterative version of QProber \cite{QProb}. The pseudocde is provided below.
 
 \begin{verbatim}
 Classify(Ts,Tc)
@@ -59,22 +67,24 @@ Classify(Ts,Tc)
 \end{verbatim}
 
 \subsection{Content Summary Construction}
+For this step we just parse the top-documents fetched during query-probes from the classification step for each of the classified categories. We eliminate duplicates before constructing 
+a content-summary. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we process first parse the fetched document and then we fetch
+the next url. To parse the documents we used a slight variation of the provided Java script.
 
-For each category node C (e.g., "Root") that you "visit" while you classify database D (using the Part 1 procedure):
-
-    For each query q associated with this node retrieve the top-4 pages returned by Yahoo! for the query on the database D.
-
-
-\section{Assumptions}
+\subsection{Exception handling}
+There are two main types of exceptions:
 
 \begin{itemize}
-\item Exception handling
-\item Multi-word probes: we decided not include multi-word entries in the content summaries.
+\item Connections timeouts when querying Yahoo (java.net.SocketTimeoutException)
+\item Http error (code 503)
 \end{itemize}
+
+In both cases we retry getting the results from Yahoo, up to a maximum number of tries, set to 100 which is more than enough.
 
 \section{Example}
 To test the classification results of QProber we used the provided the examples in the project description and several of the examples from a list
-of Largest Deep Web Sites \cite{AIP}. The following results are for $T_s$=0.6 and coverage $T_c$=100.
+of Largest Deep Web Sites \cite{AIP}. The results \ref{Res1} are for $T_s$=0.6 and coverage $T_c$=100  (computed on 20th of March). The specificity
+is >0.5 so all web-pages were classified under one category.
 
 \begin{table}
 \begin{tabular}{|c|c|c|}
@@ -124,7 +134,8 @@ nba.com & National Basketball Association & Root/Sports/Basketball\\
 www.sports.org.au & Australian Athletes with Disability & Root/Sports\\
 \hline
 \end{tabular}
-\label{}
+\caption{Classification for ts=0.3 and tc=100}
+\label{Res1}
 \end{table}
 
 \section* {Appendix}

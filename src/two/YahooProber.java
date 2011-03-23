@@ -40,11 +40,11 @@ class DocumentSample {
 public class YahooProber {
 
 	// Yahoo API string
-	private final String API_KEY = "BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO";
+	private String API_KEY = "BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO";
 	// Number of hierarchy levels
 	private static int levels = 2;
 	// Default url
-	private String databaseURL = "yahoo.com";
+	private String databaseURL = "java.sun.com";
 	// Default specificity
 	private double SPECIFICITY = 0.6;
 	// Default coverage
@@ -65,16 +65,17 @@ public class YahooProber {
 	 */
 	public YahooProber() {
 		this.initalizeTree();
-		this.classifyDB();
+		this.qProbe();
 	}
 
 	/**
 	 * Constructor with arguments
 	 */
-	public YahooProber(String url, double specificity, int coverage) {
+	public YahooProber(String url, double specificity, int coverage, String appId) {
 		this.databaseURL = url;
 		this.SPECIFICITY = specificity;
 		this.COVERAGE = coverage;
+		this.API_KEY=appId;
 		this.initalizeTree();
 		this.qProbe();
 	}
@@ -113,6 +114,10 @@ public class YahooProber {
 		return this.catSpecificity.get(catNode);
 	}
 
+	/**
+	 * Checks whether a category was further pushed down
+	 * during classification
+	 */
 	public boolean hasChild(String cat) {
 
 		for (String c : this.catNodes.keySet()) {
@@ -123,7 +128,7 @@ public class YahooProber {
 		return false;
 	}
 	
-	/*
+	/**
 	 * Implements QProber basic steps
 	 */
 	public void qProbe() {
@@ -175,8 +180,6 @@ public class YahooProber {
 								&& (tries < 100))
 							tries++;
 						numhits = this.poseQuery(queryTerms, docs);
-						// Try to avoid abusing the site
-						Thread.sleep(2000);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
@@ -304,11 +307,17 @@ public class YahooProber {
 				ds.urlMap.put(url, words);
 				ds.wordSet.addAll(words);
 				docId++;
+				//Small delay to avoid abusing the site
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 
 			String fileName = "sample-" + ds.category + "-" + this.databaseURL
 					+ ".txt";
-			// display result
+			// display result to content-summary file
 			this.display(ds, fileName);
 		}
 		System.out.println("\n\nFinished generating document samples..");
@@ -404,12 +413,15 @@ public class YahooProber {
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (ConnectException e) {
+			e.printStackTrace();
 			return -1;
 		}
 		// Handles HTTP response error code: 503
 		catch (IOException e) {
+			e.printStackTrace();
 			return -1;
 		} catch (JSONException e) {
+			e.printStackTrace();
 			return -1;
 		}
 
@@ -420,11 +432,11 @@ public class YahooProber {
 	 * Main function initiating qprobing
 	 */
 	public static void main(String args[]) {
-		if (args.length >= 3) {
+		if (args.length ==4 ) {
 			System.out.println("Using command line arguments...");
 			double p = Double.parseDouble(args[1]);
 			int c = Integer.parseInt(args[2]);
-			new YahooProber(args[0], p, c);
+			new YahooProber(args[0], p, c, args[3]);
 		} else {
 			System.out
 					.println("No arguments provided..Using default database!");
