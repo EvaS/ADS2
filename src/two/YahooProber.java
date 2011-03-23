@@ -48,7 +48,7 @@ public class YahooProber {
 	// Default specificity
 	private double SPECIFICITY = 0.6;
 	// Default coverage
-	private int COVERAGE = 100;
+	private long COVERAGE = 100;
 	// Number of top results to use for content-summary
 	private static final int topResults = 4;
 	// Category tree
@@ -57,8 +57,8 @@ public class YahooProber {
 	private HashMap<String, Set<String>> cachedResults = new HashMap<String, Set<String>>();
 	// Results for categories
 	private HashMap<String, Double> catSpecificity = new HashMap<String, Double>();
-	private HashMap<String, Integer> catCoverage = new HashMap<String, Integer>();
-	private HashMap<String, Integer> overallCoverage = new HashMap<String, Integer>();
+	private HashMap<String, Long> catCoverage = new HashMap<String, Long>();
+	private HashMap<String, Long> overallCoverage = new HashMap<String, Long>();
 
 	/**
 	 * Default constructor
@@ -71,7 +71,7 @@ public class YahooProber {
 	/**
 	 * Constructor with arguments
 	 */
-	public YahooProber(String url, double specificity, int coverage, String appId) {
+	public YahooProber(String url, double specificity, long coverage, String appId) {
 		this.databaseURL = url;
 		this.SPECIFICITY = specificity;
 		this.COVERAGE = coverage;
@@ -102,11 +102,11 @@ public class YahooProber {
 		return this.catNodes.get(catNode);
 	}
 
-	public int getOverallCoverage(String catNode) {
+	public long getOverallCoverage(String catNode) {
 		return this.overallCoverage.get(catNode);
 	}
 
-	public int getCoverage(String catNode) {
+	public long getCoverage(String catNode) {
 		return this.catCoverage.get(catNode);
 	}
 
@@ -157,14 +157,14 @@ public class YahooProber {
 					docs = new HashSet<String>();
 					cachedResults.put(catName, docs);
 				}
-				int coverage = 0;
+				long coverage = 0;
 				try {
 					FileInputStream fstream = new FileInputStream(cat);
 					DataInputStream in = new DataInputStream(fstream);
 					BufferedReader br = new BufferedReader(
 							new InputStreamReader(in));
 					String query;
-					int cCoverage = 0;
+					long cCoverage = 0;
 					String previousCategory = null;
 					while ((query = br.readLine()) != null) {
 						String[] queryTerms = query.split(" ");
@@ -329,6 +329,8 @@ public class YahooProber {
 	public void display(DocumentSample ds, String fileName) {
 		FileWriter fstream;
 		BufferedWriter out;
+		//In case a url contains / character
+		fileName=fileName.replaceAll("/", "-");
 		try {
 			fstream = new FileWriter(fileName);
 			out = new BufferedWriter(fstream);
@@ -348,7 +350,6 @@ public class YahooProber {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	/**
@@ -378,7 +379,7 @@ public class YahooProber {
 					+ "&start=0" + "&count=" + YahooProber.topResults
 					+ "&format=json");
 			URLConnection connection = url.openConnection();
-			connection.setConnectTimeout(1000);
+			connection.setConnectTimeout(2000);
 			String line;
 			StringBuilder builder = new StringBuilder();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -407,7 +408,7 @@ public class YahooProber {
 					docs.add(j.getString("url"));
 				else
 					System.err
-							.println("poseQuery : document object passesd is null");
+							.println("poseQuery : document object passed is null");
 			}
 			return numHits;
 		} catch (MalformedURLException e) {
@@ -424,7 +425,6 @@ public class YahooProber {
 			e.printStackTrace();
 			return -1;
 		}
-
 		return 0;
 	}
 
@@ -435,7 +435,7 @@ public class YahooProber {
 		if (args.length ==4 ) {
 			System.out.println("Using command line arguments...");
 			double p = Double.parseDouble(args[1]);
-			int c = Integer.parseInt(args[2]);
+			long c = Long.parseLong(args[2]);
 			new YahooProber(args[0], p, c, args[3]);
 		} else {
 			System.out
