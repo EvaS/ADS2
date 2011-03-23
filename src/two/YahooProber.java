@@ -315,7 +315,9 @@ public class YahooProber {
 				}
 			}
 
-			String fileName = "sample-" + ds.category + "-" + this.databaseURL
+			String fileName = 
+				//"sample-" + 
+			ds.category + "-" + this.databaseURL
 					+ ".txt";
 			// display result to content-summary file
 			this.display(ds, fileName);
@@ -334,7 +336,7 @@ public class YahooProber {
 		try {
 			fstream = new FileWriter(fileName);
 			out = new BufferedWriter(fstream);
-			out.write("Document Sample for " + ds.category + "\n");
+		//	out.write("Document Sample for " + ds.category + "\n");
 			int docCount = 0;
 			for (String word : ds.wordSet) {
 				out.write(word + "#");
