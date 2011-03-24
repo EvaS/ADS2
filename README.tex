@@ -6,9 +6,9 @@
 \title{Project 2 \\ Advanced Databases \\}
 
 \author{
-Amandeep  Singh\\as3947@columbia.edu
+Amandeep Singh\\as3947@columbia.edu
 \and
-Evangelia  Sitaridi \\ es2996@cs.columbia.edu
+Evangelia Sitaridi \\ es2996@cs.columbia.edu
 }
 
 \date{\today}
@@ -41,7 +41,7 @@ To classify the given database we traverse each level of the category tree and c
 
 \[ECoverage(D,Ci)=\sum_{\ \ q: \ query \ probe \ for \ C_i}{f(q)} \]
 
-\[ESpecificity(D, C_i ) = \frac{ESpecificity(D, Parent(C_i )) \times ECoverage(D, C_i )} {\sum_{C_j \  is \ a \ child \ of \ Parent(C_i)} {ECoverage(D,C_j)}} \]
+\[ESpecificity(D, C_i ) = \frac{ESpecificity(D, Parent(C_i )) \times ECoverage(D, C_i )} {\sum_{C_j \ is \ a \ child \ of \ Parent(C_i)} {ECoverage(D,C_j)}} \]
 
 pruning the categories that do not meet the specificity and coverage criteria. We implemented an iterative version of QProber \cite{QProb}. The high-level pseudocode is provided below.
 
@@ -55,11 +55,11 @@ Classify(Ts,Tc)
     for each category P in L
         remove P from L
         add to L children of P
-        read P query-file  F
+        read P query-file F
         for each query q in F
             pose-query(q)
             store top-4 results
-            update coverage of P 
+            update coverage of P
             update coverage of q.child
          if(P.specificity>=Ts && P.coverage>=Tc)
             add P to Cat
@@ -69,9 +69,9 @@ Classify(Ts,Tc)
 \end{verbatim}
 
 \subsection{Content Summary Construction}
+
 For this step we just parse the top-documents fetched during query-probes from the classification step for each of the classified categories. We eliminate duplicates before constructing 
-a content-summary before downloading a document, to avoid multiple fetch of the same document. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we process first parse the fetched document and then we fetch
-the next url. To parse the documents we used a slight variation of the provided Java script. The format of a summary file is:
+a content-summary before downloading a document, to avoid multiple fetch of the same document. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we process first parse the fetched document and then we fetch the next url. To parse the documents we used a slight variation of the provided Java script. The format of a summary file is:
 
 $<$word$>\#<$frequency in the document sample$>$
 
@@ -83,11 +83,11 @@ There are two main types of exceptions:
 \item Http error (code 503)
 \end{itemize}
 
-In both cases we retry getting the results from Yahoo, up to a maximum number of tries, set to 100 which is more than enough. For the first exception category we set time-out equal 3 seconds.
+In both cases we retry getting the results from Yahoo, up to a maximum number of tries, set to 100 which seems more than enough from out tests. For the first exception category we set time-out equal 3 seconds.
 
 \section{Examples}
 To test the classification results of QProber we used the provided the examples in the project description and several of the examples from a list
-of Largest Deep Web Sites \cite{AIP}. The results \ref{Res1} are for $T_s$=0.6 and coverage $T_c$=100  (computed on 20th of March). The specificity
+of Largest Deep Web Sites \cite{AIP}. The results \ref{Res1} are for $T_s$=0.6 and coverage $T_c$=100 (computed on 20th of March). The specificity
 is >0.5 so all web-pages were classified under one category.
 
 \begin{table}
@@ -150,30 +150,16 @@ by decreasing the specificity.
 \hline
 \textbf{URL} & \textbf{Classification}\\
 \hline
-java.sun.com &  \{Root/Computers/Programming\} \\
+java.sun.com & \{Root/Computers/Programming\} \\
 \hline
 yahoo.com& \{Root/Health/Fitness, Root/Sports\}\\
 \hline
-diabetes.org& \{Root/Health/Fitness, 
-										Root/Health/Diseases \}\\
+diabetes.org& \{Root/Health/Fitness,
+Root/Health/Diseases \}\\
 \hline
-hardwarecentral.com&  \{Root/Computers/Hardware, Root/Computers/Programming\}\\
+hardwarecentral.com& \{Root/Computers/Hardware, Root/Computers/Programming\}\\
 \hline
-soccernet.espn.go.com &  \\
-\hline
-www.jumbo.com & \\
-\hline
-www.webmd.com & \\
-\hline
-www.fitnessmagazine.com & \\
-\hline
-www.afaa.com & \\
-\hline
-processing.org & \\
-\hline
-nba.com & \\
-\hline
-www.sports.org.au &\\
+www.webmd.com & \{ Root/Health/Diseases, Root/Health/Fitness\} \\
 \hline
 \end{tabular}
 \caption{Classification for ts=0.3 and tc=100}
@@ -202,18 +188,18 @@ The files are:
 
 \subsection* {Compilation}
 \begin{itemize}
-\item \textbf{Compile}: make 
-\item \textbf{Clean-up}: make clean 
-\item\textbf{Execute}: java -cp .:../lib/json.jar  YahooProber $<url>$ $<t_{es}>$ $<t_{ep}>$ $<yahoo-app-id>$
-\item \textbf{Yahoo App Id}: 
+\item \textbf{Compile}: make
+\item \textbf{Clean-up}: make clean
+\item\textbf{Execute}: java -cp .:../lib/json.jar YahooProber $<url>$ $<t_{es}>$ $<t_{ep}>$ $<yahoo-app-id>$
+\item \textbf{Yahoo App Id}:
 
 BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO
 \end{itemize}
 
 
 \begin{thebibliography}{50}
-		\bibitem{AIP} \textit{Largest Deep Web Sites}, \url{http://aip.completeplanet.com/aip-engines/help/largest_engines.jsp}
-		\bibitem{QProb} \textit{QProber: A system for automatic classification of hidden-web databases}, Panagiotis G. Ipeirotis,  Luis Gravano,  Mehran Sahami, 2003
+\bibitem{AIP} \textit{Largest Deep Web Sites}, \url{http://aip.completeplanet.com/aip-engines/help/largest_engines.jsp}
+\bibitem{QProb} \textit{QProber: A system for automatic classification of hidden-web databases}, Panagiotis G. Ipeirotis, Luis Gravano, Mehran Sahami, 2003
 \end{thebibliography}
 
 \end{document}
