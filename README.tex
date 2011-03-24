@@ -70,7 +70,7 @@ Classify(Ts,Tc)
 
 \subsection{Content Summary Construction}
 For this step we just parse the top-documents fetched during query-probes from the classification step for each of the classified categories. We eliminate duplicates before constructing 
-a content-summary. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we process first parse the fetched document and then we fetch
+a content-summary before downloading a document, to avoid multiple fetch of the same document. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we process first parse the fetched document and then we fetch
 the next url. To parse the documents we used a slight variation of the provided Java script. The format of a summary file is:
 
 $<$word$>\#<$frequency in the document sample$>$
@@ -83,7 +83,7 @@ There are two main types of exceptions:
 \item Http error (code 503)
 \end{itemize}
 
-In both cases we retry getting the results from Yahoo, up to a maximum number of tries, set to 100 which is more than enough. For the first exception category we set time-out equal 2 seconds.
+In both cases we retry getting the results from Yahoo, up to a maximum number of tries, set to 100 which is more than enough. For the first exception category we set time-out equal 3 seconds.
 
 \section{Examples}
 To test the classification results of QProber we used the provided the examples in the project description and several of the examples from a list

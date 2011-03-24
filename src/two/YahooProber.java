@@ -71,11 +71,12 @@ public class YahooProber {
 	/**
 	 * Constructor with arguments
 	 */
-	public YahooProber(String url, double specificity, long coverage, String appId) {
+	public YahooProber(String url, double specificity, long coverage,
+			String appId) {
 		this.databaseURL = url;
 		this.SPECIFICITY = specificity;
 		this.COVERAGE = coverage;
-		this.API_KEY=appId;
+		this.API_KEY = appId;
 		this.initalizeTree();
 		this.qProbe();
 	}
@@ -115,8 +116,7 @@ public class YahooProber {
 	}
 
 	/**
-	 * Checks whether a category was further pushed down
-	 * during classification
+	 * Checks whether a category was further pushed down during classification
 	 */
 	public boolean hasChild(String cat) {
 
@@ -127,7 +127,7 @@ public class YahooProber {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Implements QProber basic steps
 	 */
@@ -179,7 +179,6 @@ public class YahooProber {
 						while (((numhits = this.poseQuery(queryTerms, docs)) == -1)
 								&& (tries < 100))
 							tries++;
-						numhits = this.poseQuery(queryTerms, docs);
 						coverage += numhits;
 						cCoverage += numhits;
 						previousCategory = queryTerms[0];
@@ -307,7 +306,7 @@ public class YahooProber {
 				ds.urlMap.put(url, words);
 				ds.wordSet.addAll(words);
 				docId++;
-				//Small delay to avoid abusing the site
+				// Small delay to avoid abusing the site
 				try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
@@ -329,8 +328,8 @@ public class YahooProber {
 	public void display(DocumentSample ds, String fileName) {
 		FileWriter fstream;
 		BufferedWriter out;
-		//In case a url contains / character
-		fileName=fileName.replaceAll("/", "-");
+		// In case a url contains / character
+		fileName = fileName.replaceAll("/", "-");
 		try {
 			fstream = new FileWriter(fileName);
 			out = new BufferedWriter(fstream);
@@ -379,7 +378,7 @@ public class YahooProber {
 					+ "&start=0" + "&count=" + YahooProber.topResults
 					+ "&format=json");
 			URLConnection connection = url.openConnection();
-			connection.setConnectTimeout(2000);
+			connection.setConnectTimeout(3000);
 			String line;
 			StringBuilder builder = new StringBuilder();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -432,7 +431,7 @@ public class YahooProber {
 	 * Main function initiating qprobing
 	 */
 	public static void main(String args[]) {
-		if (args.length ==4 ) {
+		if (args.length == 4) {
 			System.out.println("Using command line arguments...");
 			double p = Double.parseDouble(args[1]);
 			long c = Long.parseLong(args[2]);
