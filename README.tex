@@ -71,7 +71,7 @@ Classify(Ts,Tc)
 \subsection{Content Summary Construction}
 
 For this step we just parse the top-documents fetched during query-probes from the classification step for each of the classified categories. We eliminate duplicates before constructing 
-a content-summary before downloading a document, to avoid multiple fetch of the same document. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we process first parse the fetched document and then we fetch the next url. To parse the documents we used a slight variation of the provided Java script. The format of a summary file is:
+a content-summary before downloading a document, to avoid multiple fetch of the same document. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we parse first the fetched document and then we fetch the next url. To parse the documents we used a slight variation of the provided Java script. The format of a summary file is:
 
 $<$word$>\#<$frequency in the document sample$>$
 
