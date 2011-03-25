@@ -3,7 +3,7 @@
 \usepackage{url}
 \usepackage{graphicx}
 
-\title{Project 2 \\ Advanced Databases \\}
+\title{Project 2 \\ Advanced Database Systems \\}
 
 \author{
 Amandeep Singh\\as3947@columbia.edu
@@ -19,7 +19,7 @@ Evangelia Sitaridi \\ es2996@cs.columbia.edu
 
 \section{Description}
 For classification and content summary construction we used the fixed classification tree of figure \ref{fig:tree}, given in the description of the project. The queries
-used for classification are in \textit{queries} directory, included in the submission's compressed file. Our implementation has two main classes shown in diagram \ref{fig:classes}.
+used for classification are in \textit{queries} directory, included in our submission's compressed file. Our implementation has two main classes shown in diagram \ref{fig:classes}.
 
 \begin{figure}[htb!]
 \centering
@@ -70,7 +70,7 @@ Classify(Ts,Tc)
 
 \subsection{Content Summary Construction}
 
-For this step we just parse the top-documents fetched during query-probes from the classification step for each of the classified categories. We eliminate duplicates before constructing 
+For this step we just parse the top-documents fetched during query-probes from the classification step, for each of the classified categories. We eliminate duplicates before constructing 
 a content-summary, to avoid multiple fetches of the same document. We also decided not to include multiple-word entries to the content summaries. To space the requests to the web-sites we parse first the fetched document and then process the next url. To parse the documents we used a slight variation of the provided Java script. The format of a summary file is:
 
 $<$word$>\#<$frequency in the document sample$>$
@@ -85,13 +85,13 @@ There are two main types of exceptions:
 
 In both cases, we retry getting the results from Yahoo, up to a maximum number of tries, set to 100 which seems to be more than enough from out tests. To avoid frequent timeouts we set time-out parameter equal to 3 seconds.
 
-
 \section{Examples}
 To test the classification results of QProber we used the provided examples in the project description and several of the examples from a list
-of Largest Deep Web Sites \cite{AIP}. The results in table \ref{Res1} are for $T_s$=0.6 and coverage $T_c$=100 (computed on 20th of March). The specificity
+of Largest Deep Web Sites \cite{AIP}. The results in Table \ref{Res1} are for $T_s$=0.6 and coverage $T_c$=100 (computed on 20th of March). The specificity
 is $>$0.5 so all web-pages were classified under no more than one category.
 
-\begin{table}
+\begin{table}[!h]
+\setlength{\tabcolsep}{1.0pt}
 \begin{tabular}{|c|c|c|}
 \hline
 \textbf{URL} & \textbf{Description} & \textbf{Classification}\\
@@ -139,14 +139,13 @@ nba.com & National Basketball Association & Root/Sports/Basketball\\
 www.sports.org.au & Australian Athletes with Disability & Root/Sports\\
 \hline
 \end{tabular}
-\caption{Classification for ts=0.6 and tc=100}
+\caption{Classification for Ts=0.6 and Tc=100}
 \label{Res1}
 \end{table}
 
 
-We also tried our program for lower  specificity: $t_s$=0.3 so that a database can be classified under more than one categories. Below we show the classification for the web-sites that classification changed
-by decreasing the specificity.
-\begin{table}
+We also tried our program for lower  specificity: $T_s$=0.3 so that a database can be classified under more than one categories. In Table \ref{Res2} we show the classification for the web-sites where the classification was extended by decreasing the specificity.
+\begin{table}[!h]
 \begin{tabular}{|c|c|}
 \hline
 \textbf{URL} & \textbf{Classification}\\
@@ -163,7 +162,7 @@ hardwarecentral.com& \{Root/Computers/Hardware, Root/Computers/Programming\}\\
 www.webmd.com & \{ Root/Health/Diseases, Root/Health/Fitness\} \\
 \hline
 \end{tabular}
-\caption{Classification for ts=0.3 and tc=100}
+\caption{Classification for Ts=0.3 and Tc=100}
 \label{Res2}
 \end{table}
 
@@ -171,9 +170,8 @@ www.webmd.com & \{ Root/Health/Diseases, Root/Health/Fitness\} \\
 
 \subsection* {File Listing}
 
-We list below the files included in out submission zip. The zip contains the following folders:
+We list below the files included in our submission. The compressed file contains the following folders: [src, lib, queries].
 
-[src, lib, queries].
 The files are:
 \begin{itemize}
 \item README.pdf
@@ -191,7 +189,7 @@ The files are:
 \begin{itemize}
 \item \textbf{Compile}: make
 \item \textbf{Clean-up}: make clean
-\item\textbf{Execute}: java -cp .:../lib/json.jar YahooProber $<url>$ $<t_{es}>$ $<t_{ep}>$ $<yahoo-app-id>$
+\item\textbf{Execute}: java -cp .:../lib/json.jar two.YahooProber  $<url>$ $<t_{es}>$ $<t_{ep}>$ $<yahoo-app-id>$ (from src directory)
 \item \textbf{Yahoo App Id}:
 
 BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO
@@ -200,6 +198,7 @@ BEWTNqTV34H1zojJNQ5MZB48A1vR2mJeNAhKRvk5.bLyZd6gYgQmsVVsqZ7vv32aW73O6VNyzTO
 
 \begin{thebibliography}{50}
 \bibitem{AIP} \textit{Largest Deep Web Sites}, \url{http://aip.completeplanet.com/aip-engines/help/largest_engines.jsp}
+\bibitem{JSON} \textsl{Java JSON Implementation}, http://www.json.org/java/
 \bibitem{QProb} \textit{QProber: A system for automatic classification of hidden-web databases}, Panagiotis G. Ipeirotis, Luis Gravano, Mehran Sahami, 2003
 \end{thebibliography}
 
