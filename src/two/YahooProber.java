@@ -26,6 +26,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * Class storing document samples
+ */
 class DocumentSample {
 	String category;
 	Set<String> filteredURLs = new HashSet<String>();
@@ -35,7 +38,7 @@ class DocumentSample {
 }
 
 /**
- * Part of this code is from out first project
+ * Implements QProber system Part of this code is from out first project
  */
 public class YahooProber {
 
@@ -69,7 +72,7 @@ public class YahooProber {
 	}
 
 	/**
-	 * Constructor with arguments
+	 * Constructor with program arguments
 	 */
 	public YahooProber(String url, double specificity, long coverage,
 			String appId) {
@@ -157,8 +160,10 @@ public class YahooProber {
 					docs = new HashSet<String>();
 					cachedResults.put(catName, docs);
 				}
+				// Total coverage of category catName
 				long coverage = 0;
 				try {
+					// Open query files under queries/ directory
 					FileInputStream fstream = new FileInputStream(cat);
 					DataInputStream in = new DataInputStream(fstream);
 					BufferedReader br = new BufferedReader(
@@ -186,7 +191,7 @@ public class YahooProber {
 					// Add the coverage of the last sub-category
 					this.catCoverage.put(previousCategory, cCoverage);
 					in.close();
-					// Compute the overall coverage of this category
+					// Store overall coverage of this category
 					this.overallCoverage.put(catName, coverage);
 
 				} catch (Exception e) {
@@ -197,6 +202,7 @@ public class YahooProber {
 			categories.clear();
 			categories.addAll(tempCats);
 			tempCats.clear();
+
 			LinkedList<String> toRemove = new LinkedList<String>();
 			// Check the specificity and coverage of each category
 			for (String catName : categories) {
@@ -213,7 +219,6 @@ public class YahooProber {
 						+ this.getCoverage(c));
 				System.out.println("Specificity for category:" + c + " is "
 						+ specificity);
-
 			}
 			// Remove all categories which are < Ts or Tc
 			for (String tr : toRemove) {
@@ -314,10 +319,9 @@ public class YahooProber {
 				}
 			}
 
-			String fileName = 
-				//"sample-" + 
-			ds.category + "-" + this.databaseURL
-					+ ".txt";
+			String fileName =
+			// "sample-" +
+			ds.category + "-" + this.databaseURL + ".txt";
 			// display result to content-summary file
 			this.display(ds, fileName);
 		}
@@ -335,7 +339,7 @@ public class YahooProber {
 		try {
 			fstream = new FileWriter(fileName);
 			out = new BufferedWriter(fstream);
-		//	out.write("Document Sample for " + ds.category + "\n");
+			// out.write("Document Sample for " + ds.category + "\n");
 			int docCount = 0;
 			for (String word : ds.wordSet) {
 				out.write(word + "#");
